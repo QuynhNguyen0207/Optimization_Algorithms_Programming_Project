@@ -1,283 +1,141 @@
 #include <iostream>
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iterator>
+
 using namespace std;
 
-// AVL tree node structure
-struct Node {
-    int data;
-    int height;
-    Node* left;
-    Node* right;
-};
-//Function declarations
-int maxheight(int x, int y); 
-int balanceFactor(Node* AVLNode); 
-Node* balance(Node* root, int BF);
-Node* findMax(Node* node); 
-int height(Node* AVLNode); 
-Node* createNode(int data); 
-Node* insertNode(Node* AVLNode, int data); 
-Node* deleteNode(Node* AVLNode, int data); 
-Node* rightRotate(Node* a); 
-Node* leftRotate(Node* a); 
-
-// Utility function to create a new node
-Node* createNode(int data) {
-    Node* node = new Node;
-    node->data = data;
-    node->left = NULL;
-    node->right = NULL;
-    node->height = 1;
-    return node;
-}
-
-// Utility function to calculate height of a node
-int height(Node* AVLNode) {
-    if (AVLNode == NULL) {
-        return 0;
+//Defines Hashtable class
+class Hashtable {
+public:
+  Hashtable() {
+//Gets constructor method
+    for (int i = 0; i < 26; i++) {
+      table[i] = "never used";
     }
-    return AVLNode->height;
-}
+  }
 
-int maxheight(int x, int y) {
-    return (x > y) ? x : y;
-}
+//Declares getKey method returning the last character of the given string
+  char getKey(const string &str) const {
+    return str.back();
+  }
 
-// Utility function to find the maximum node
-Node *findMax(Node *node) {
-    if (node->right == NULL) {
-        return node;
+//Declares getIndex method returning the index of the array slot corresponding to the given key character
+  int getIndex(char ch) const {
+    int tmpIndex = ch - 'a';
+    return tmpIndex;
+  }
+
+//Declares locateKey method searching the hashtable, then returning the corresponding value if found or an empty string if not found
+  string locateKey(const string &key) const {
+    int index = getIndex(getKey(key));
+    string empty = "";
+    if (table[index] == key) {
+      return table[index];
     } else {
-        return findMax(node->right);
-    }
-}
-
-// Utility function to insert a node with value val into the AVL tree rooted at AVLNode
-Node* insertNode(Node* AVLNode, int data) {
-    if (AVLNode == NULL) {
-        return createNode(data);
-    }
-    if (data < AVLNode->data) {
-        AVLNode->left = insertNode(AVLNode->left, data);
-    } else if (data > AVLNode->data) {
-        AVLNode->right = insertNode(AVLNode->right, data);
-    } else {
-        return AVLNode;
-    }
-    //update Height(AVLNode);
-    int leftHeight = height(AVLNode->left);
-    int rightHeight = height(AVLNode->right);
-    AVLNode->height = 1+ maxheight(leftHeight, rightHeight);
-
-    int BF = balanceFactor(AVLNode);
-    AVLNode = balance(AVLNode, BF);
-
-    return AVLNode;
-}
-
-// Utility function to delete a node with value val from the AVL tree rooted at AVLNode
-Node* deleteNode(Node* AVLNode, int data) {
-    if (AVLNode == NULL) {
-	  return AVLNode;
-    }
-    else if (data < AVLNode->data) {
-        AVLNode->left = deleteNode(AVLNode->left, data);
-    } else if (data > AVLNode->data) {
-        AVLNode->right = deleteNode(AVLNode->right, data);
-    } else {
-	  // Node with no child
-        if (AVLNode->left == NULL && AVLNode->right == NULL) {
-            delete AVLNode;
-            AVLNode = NULL;
+      int i = index + 1;
+      while (i != index) {
+        if (i == 26) {
+          i = 0;
         }
-	  
-	  // Node with left child
-        else if (AVLNode->right == NULL && AVLNode->left != NULL) {
-            Node* tempNode = AVLNode;
-            delete tempNode;
-            AVLNode = AVLNode->left;
+        if (table[i] == key) {
+          return table[i];
+        } else if (table[i] == "never used") {
+          return empty;
         }
-
-	  // Node with right child
-	  else if (AVLNode->right != NULL && AVLNode->left == NULL) {
-		Node* tempNode = AVLNode;
-		delete tempNode;
-		AVLNode = AVLNode->right;
-	  }
-	  // Node with right and left child
-	  else {
-	  	Node* tempNode = findMax(AVLNode->left);
-        	AVLNode->data = tempNode->data;
-        	AVLNode->left = deleteNode(AVLNode->left, tempNode->data);
-	  }
-    }
-    if (AVLNode == NULL) {
-	    return NULL;
-    }
-    //update Height(AVLNode);
-    int leftHeight = height(AVLNode->left);
-    int rightHeight = height(AVLNode->right);
-    AVLNode->height = 1+ maxheight(leftHeight, rightHeight);
-
-    int BF = balanceFactor(AVLNode);
-    AVLNode = balance(AVLNode, BF);
-
-    return AVLNode;
-}
-
-// Utility function to calculate balance factor of a node
-int balanceFactor(Node* AVLNode) {
-    if (AVLNode == NULL) {
-        return 0;
-    }
-    return height(AVLNode->left) - height(AVLNode->right);
-}
-
-// Utility function to perform left rotation on a node
-Node* leftRotate(Node* a) {
-    Node* c = a->right;
-    Node* c1 = c->left;
-    c->left = a;
-    a->right = c1;
-    // Update Height of a & c
-    a->height = 1 + maxheight(height(a->left), height(a->right));
-    c->height = 1 + maxheight(height(c->left), height(c->right));
-
-    return c;
-}
-
-// Utility function to perform right rotation on a node
-Node* rightRotate(Node* a) {
-    Node* b = a->left;
-    Node* b1 = b->right;
-    b->right = a;
-    a->left = b1;
-    // Update Height of a & b
-    a->height = 1 + maxheight(height(a->left), height(a->right));
-    b->height = 1 + maxheight(height(b->left), height(b->right));
-    return b;
-}
-
-// Utility function to perform the balance of AVL tree
-Node* balance(Node* root, int BF) {
-    if (BF > 1) {
-        if (height(root->left->left) >= height(root->left->right)) {
-            root = rightRotate(root);
-        } else {
-            root->left = leftRotate(root->left);
-            root = rightRotate(root);
-        }
-    } else if (BF < -1) {
-        if (height(root->right->right) >= height(root->right->left)) {
-            root = leftRotate(root);
-        } else {
-            root->right = rightRotate(root->right);
-            root = leftRotate(root);
-        }
-    }
-    return root;
-}
-
-// in-order traversal of the tree
-void printinOrder(Node *node) {
-    if (node == NULL)
-        return;
-    printinOrder(node->left);
-    cout << node->data << " ";
-    printinOrder(node->right);
-}
-
-// pre-order traversal of the tree
-void printpreOrder(Node *root) {
-    if (root == NULL)
-        return;
-    cout << root->data << " ";
-    printpreOrder(root->left);
-    printpreOrder(root->right);
-}
-
-// post-order traversal of the tree
-void printpostOrder(Node *node) {
-    if (node == NULL)
-        return;
-    printpostOrder(node->left);
-    printpostOrder(node->right);
-    cout << node->data << " ";
-}
-
-// extract integer from a string
-int extractIntegerStrings(string inputStr)
-{
-    string intStr = inputStr.substr(1);
-    // Convert the integer string to an integer
-    int IntegerData = std::stoi(intStr);
-    // Return the integer data
-    return IntegerData;
-}
-
-int main()
-{
-    string input;
-    getline(cin, input);
-
-    istringstream ss(input);
-    string subString;
-    vector<string> subStrings;
-    int num = 0;
-
-    // devide string and restore value in array
-    while (ss >> subString)
-    {
-        subStrings.push_back(subString);
-        num++;
-    }
-    string *arr = new string[num];
-    int i = 0;
-    for (const auto &str : subStrings)
-    {
-        arr[i] = str;
         i++;
+      }
+      return empty;
     }
+  }
 
-    string in;
-    Node *root = NULL;
-
-    for (int i = 0; i < num; i++)
-    {
-        in = arr[i];
-
-        if (in.find('A') != string::npos)
-        {
-            root = insertNode(root, extractIntegerStrings(in));
-        }
-        if (in.find('D') != string::npos)
-        {
-            root = deleteNode(root, extractIntegerStrings(in));
-        }
+//Declares the addKey method either adding the given key-value pair to the hashtable or updating the value when the key already exists
+  void addKey(const string &key) {
+    if (locateKey(key) != "") {
+      return;
     }
-    if (root != NULL)
-    {
-        if (arr[num - 1] == "IN")
-        {
-            printinOrder(root);
+    int index = getIndex(getKey(key));
+    if (table[index] == "never used" || table[index] == "tombstone") {
+      table[index] = key;
+    } else {
+      int i = index + 1;
+      while (i != index) {
+        if (i == 26) {
+          i = 0;
         }
-        else if (arr[num - 1] == "PRE")
-        {
-            printpreOrder(root);
+        if (table[i] == "never used" || table[i] == "tombstone") {
+          table[i] = key;
+          return;
         }
-        else
-        {
-            printpostOrder(root);
-        }
+        i++;
+      }
     }
-    else
-    {
+  }
 
-        cout << "EMPTY";
+//Declares deleteKey method removing the given key-value pair from the hashtable or not doing anything if the key is not found
+  void deleteKey(const string &key) {
+    int index = getIndex(getKey(key));
+    if (table[index] == key) {
+      table[index] = "tombstone";
+      return;
+    } else {
+      int i = index + 1;
+      while (i != index) {
+        if (i == 26) {
+          i = 0;
+        }
+        if (table[i] == key) {
+          table[i] = "tombstone";
+          return;
+        } else if (table[i] == "never used") {
+          return;
+        }
+        i++;
+      }
+      return;
     }
+  }
 
-    return 0;
+//Declares the print method printing out all the key-value pairs in the hashtable, excepting any empty of tombstone slots
+  void print() const {
+    for (int i = 0; i < 26; i++) {
+      if (table[i] != "never used" && table[i] != "tombstone") {
+        cout << table[i] << " ";
+      }
+    }
+    cout << endl;
+  }
+
+private:
+  string table[26];
+};
+
+//Drivers main function
+int main() {
+
+//Creates the Hashtable class with a string of input
+  Hashtable table;
+  string ip;
+
+//Declares getline method
+  getline(cin, ip);
+
+//Creates the istringstream class
+  istringstream is(ip);
+
+//Get constructor method with the first istream_iterator is the start of the sequence
+  vector<string> input((istream_iterator<string>(is)), 
+//The second istream_iterator is the end of the sequence
+istream_iterator<string>());
+  for (const auto &elem : input) {
+    if (elem.front() == 'A') {
+      table.addKey(elem.substr(1));
+    } else {
+      table.deleteKey(elem.substr(1));
+    }
+  }
+//Calls print method
+  table.print();
+  return 0;
 }
