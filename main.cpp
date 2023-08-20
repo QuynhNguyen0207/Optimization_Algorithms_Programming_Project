@@ -1,231 +1,283 @@
 #include <iostream>
-#include <string>
 #include <algorithm>
-
+#include <sstream>
+#include <string>
+#include <vector>
 using namespace std;
 
-// Method for integer add formula
-string add(string num1, string num2, int base);
-// Method for integer subtract formula
-string subtract(string num1, string num2, int base);
-// Method for integer multiply formula
-string multiply(string num1, string num2, int base);
-// Method for multiply one digit number
-string multiplyOneDigit(string num1, int digit, int base);
-// Method for integer divide
-string divide(string num1, string num2, int base);
-// Method for comparing the value of two strings
-bool compareStrings(string num1, string num2);
+// AVL tree node structure
+struct Node {
+    int data;
+    int height;
+    Node* left;
+    Node* right;
+};
+//Function declarations
+int maxheight(int x, int y); 
+int balanceFactor(Node* AVLNode); 
+Node* balance(Node* root, int BF);
+Node* findMax(Node* node); 
+int height(Node* AVLNode); 
+Node* createNode(int data); 
+Node* insertNode(Node* AVLNode, int data); 
+Node* deleteNode(Node* AVLNode, int data); 
+Node* rightRotate(Node* a); 
+Node* leftRotate(Node* a); 
+
+// Utility function to create a new node
+Node* createNode(int data) {
+    Node* node = new Node;
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
+    node->height = 1;
+    return node;
+}
+
+// Utility function to calculate height of a node
+int height(Node* AVLNode) {
+    if (AVLNode == NULL) {
+        return 0;
+    }
+    return AVLNode->height;
+}
+
+int maxheight(int x, int y) {
+    return (x > y) ? x : y;
+}
+
+// Utility function to find the maximum node
+Node *findMax(Node *node) {
+    if (node->right == NULL) {
+        return node;
+    } else {
+        return findMax(node->right);
+    }
+}
+
+// Utility function to insert a node with value val into the AVL tree rooted at AVLNode
+Node* insertNode(Node* AVLNode, int data) {
+    if (AVLNode == NULL) {
+        return createNode(data);
+    }
+    if (data < AVLNode->data) {
+        AVLNode->left = insertNode(AVLNode->left, data);
+    } else if (data > AVLNode->data) {
+        AVLNode->right = insertNode(AVLNode->right, data);
+    } else {
+        return AVLNode;
+    }
+    //update Height(AVLNode);
+    int leftHeight = height(AVLNode->left);
+    int rightHeight = height(AVLNode->right);
+    AVLNode->height = 1+ maxheight(leftHeight, rightHeight);
+
+    int BF = balanceFactor(AVLNode);
+    AVLNode = balance(AVLNode, BF);
+
+    return AVLNode;
+}
+
+// Utility function to delete a node with value val from the AVL tree rooted at AVLNode
+Node* deleteNode(Node* AVLNode, int data) {
+    if (AVLNode == NULL) {
+	  return AVLNode;
+    }
+    else if (data < AVLNode->data) {
+        AVLNode->left = deleteNode(AVLNode->left, data);
+    } else if (data > AVLNode->data) {
+        AVLNode->right = deleteNode(AVLNode->right, data);
+    } else {
+	  // Node with no child
+        if (AVLNode->left == NULL && AVLNode->right == NULL) {
+            delete AVLNode;
+            AVLNode = NULL;
+        }
+	  
+	  // Node with left child
+        else if (AVLNode->right == NULL && AVLNode->left != NULL) {
+            Node* tempNode = AVLNode;
+            delete tempNode;
+            AVLNode = AVLNode->left;
+        }
+
+	  // Node with right child
+	  else if (AVLNode->right != NULL && AVLNode->left == NULL) {
+		Node* tempNode = AVLNode;
+		delete tempNode;
+		AVLNode = AVLNode->right;
+	  }
+	  // Node with right and left child
+	  else {
+	  	Node* tempNode = findMax(AVLNode->left);
+        	AVLNode->data = tempNode->data;
+        	AVLNode->left = deleteNode(AVLNode->left, tempNode->data);
+	  }
+    }
+    if (AVLNode == NULL) {
+	    return NULL;
+    }
+    //update Height(AVLNode);
+    int leftHeight = height(AVLNode->left);
+    int rightHeight = height(AVLNode->right);
+    AVLNode->height = 1+ maxheight(leftHeight, rightHeight);
+
+    int BF = balanceFactor(AVLNode);
+    AVLNode = balance(AVLNode, BF);
+
+    return AVLNode;
+}
+
+// Utility function to calculate balance factor of a node
+int balanceFactor(Node* AVLNode) {
+    if (AVLNode == NULL) {
+        return 0;
+    }
+    return height(AVLNode->left) - height(AVLNode->right);
+}
+
+// Utility function to perform left rotation on a node
+Node* leftRotate(Node* a) {
+    Node* c = a->right;
+    Node* c1 = c->left;
+    c->left = a;
+    a->right = c1;
+    // Update Height of a & c
+    a->height = 1 + maxheight(height(a->left), height(a->right));
+    c->height = 1 + maxheight(height(c->left), height(c->right));
+
+    return c;
+}
+
+// Utility function to perform right rotation on a node
+Node* rightRotate(Node* a) {
+    Node* b = a->left;
+    Node* b1 = b->right;
+    b->right = a;
+    a->left = b1;
+    // Update Height of a & b
+    a->height = 1 + maxheight(height(a->left), height(a->right));
+    b->height = 1 + maxheight(height(b->left), height(b->right));
+    return b;
+}
+
+// Utility function to perform the balance of AVL tree
+Node* balance(Node* root, int BF) {
+    if (BF > 1) {
+        if (height(root->left->left) >= height(root->left->right)) {
+            root = rightRotate(root);
+        } else {
+            root->left = leftRotate(root->left);
+            root = rightRotate(root);
+        }
+    } else if (BF < -1) {
+        if (height(root->right->right) >= height(root->right->left)) {
+            root = leftRotate(root);
+        } else {
+            root->right = rightRotate(root->right);
+            root = leftRotate(root);
+        }
+    }
+    return root;
+}
+
+// in-order traversal of the tree
+void printinOrder(Node *node) {
+    if (node == NULL)
+        return;
+    printinOrder(node->left);
+    cout << node->data << " ";
+    printinOrder(node->right);
+}
+
+// pre-order traversal of the tree
+void printpreOrder(Node *root) {
+    if (root == NULL)
+        return;
+    cout << root->data << " ";
+    printpreOrder(root->left);
+    printpreOrder(root->right);
+}
+
+// post-order traversal of the tree
+void printpostOrder(Node *node) {
+    if (node == NULL)
+        return;
+    printpostOrder(node->left);
+    printpostOrder(node->right);
+    cout << node->data << " ";
+}
+
+// extract integer from a string
+int extractIntegerStrings(string inputStr)
+{
+    string intStr = inputStr.substr(1);
+    // Convert the integer string to an integer
+    int IntegerData = std::stoi(intStr);
+    // Return the integer data
+    return IntegerData;
+}
 
 int main()
 {
-    // Variables
-    string num1, num2;
-    int base;
-    cin >> num1 >> num2 >> base;
-    
-	// Strings output from methods
-    string sum = add(num1, num2, base);
-    string product = multiply(num1, num2, base);
-    string quotient = divide(num1, num2, base);
+    string input;
+    getline(cin, input);
 
-    cout << sum << " " << product << " " << quotient << " " << endl;
-    return 0;
-}
+    istringstream ss(input);
+    string subString;
+    vector<string> subStrings;
+    int num = 0;
 
-// Method for integer add formula
-string add(string num1, string num2, int base)
-{
-    // Attributes
-    int carry = 0;
-    string result = "";
-    int sum;
-
-    int i = num1.length() - 1, j = num2.length() - 1;
-
-    // While loop by getting the current digit of number 1 and number 2, then subtracting the character'0'
-   // If either number 1 and number 2 has no more digits, 0 is used instead
-    while (i >= 0 || j >= 0 || carry)
+    // devide string and restore value in array
+    while (ss >> subString)
     {
-        int x = i >= 0 ? num1[i] - '0' : 0;
-        int y = j >= 0 ? num2[j] - '0' : 0;
-
-        // Adding 2 digits, carry and storing the result in variable sum
-        int sum = x + y + carry;
-        carry = sum / base;
-
-        // Calculating the new sum by taking the remainder sum divided by base
-        sum = sum % base;
-
-        // Converting the new sum back to a character by adding the character 0 to it and appends it to result
-        result += (char)(sum + '0');
-
-        i--, j--;
+        subStrings.push_back(subString);
+        num++;
     }
-    // Result is reversed and returned as the reversed string showing the correct sum of two input numbers
-    reverse(result.begin(), result.end());
-    return result;
-}
-
-// Method for integer subtract formula
-string subtract(string num1, string num2, int base)
-{
-    // Attributes
-    int borrow = 0;
-    string result = "";
-    int diff;
-
-    int i = num1.length() - 1, j = num2.length() - 1;
-
-    // While loop by getting the current digit of number 1 and number 2, then subtracting the character'0'
-   	// If either number 1 and number 2 has no more digits, 0 is used instead
-    while (i >= 0 || j >= 0)
+    string *arr = new string[num];
+    int i = 0;
+    for (const auto &str : subStrings)
     {
-        int x = i >= 0 ? num1[i] - '0' : 0;
-        int y = j >= 0 ? num2[j] - '0' : 0;
+        arr[i] = str;
+        i++;
+    }
 
-        // Subtracting 2 digits, borrow and storing the result in variable diff
-        int diff = x - y - borrow;
+    string in;
+    Node *root = NULL;
 
-        // If diff is negative, adding base to diff and sets borrow to 1; otherwise, setting borrow to 0
-        if (diff < 0)
+    for (int i = 0; i < num; i++)
+    {
+        in = arr[i];
+
+        if (in.find('A') != string::npos)
         {
-            diff += base;
-            borrow = 1;
+            root = insertNode(root, extractIntegerStrings(in));
+        }
+        if (in.find('D') != string::npos)
+        {
+            root = deleteNode(root, extractIntegerStrings(in));
+        }
+    }
+    if (root != NULL)
+    {
+        if (arr[num - 1] == "IN")
+        {
+            printinOrder(root);
+        }
+        else if (arr[num - 1] == "PRE")
+        {
+            printpreOrder(root);
         }
         else
         {
-            borrow = 0;
+            printpostOrder(root);
         }
-
-        result += (char)(diff + '0');
-
-        i--, j--;
     }
-
-    // Result is reversed and returned as the reversed string showing the correct difference of two input numbers
-    // Note: This function assumes number 1 > or = than number 2; hence, if number 2 > number 1, result will be incorrect
-    reverse(result.begin(), result.end());
-    return result;
-}
-
-// Method for integer multiply formula
-string multiply(string num1, string num2, int base)
-{
-    // If either number 1 or number 2 is a single digit, it calls the function MultiplyOneDigit which multiplies a string by a single digit
-    if (num1.length() == 1 && num2.length() == 1)
+    else
     {
-        return multiplyOneDigit(num1, num2[0] - '0', base);
+
+        cout << "EMPTY";
     }
 
-    // If both number 1 and number 2 have multiple digits, the function initializes variables n: the length of number 1, m: the length of number 2
-    int n = num1.length(), m = num2.length();
-    string result(n + m, '0');
-
-    // Nested loop that multiplies each digit of number 1 by each digit of number 2, starting from the least significant digit.
-    for (int i = n - 1; i >= 0; i--)
-    {
-        int carry = 0;
-        for (int j = m - 1; j >= 0; j--)
-        {
-            int temp = (num1[i] - '0') * (num2[j] - '0') + (result[i + j + 1] - '0') + carry;
-            result[i + j + 1] = (char)(temp % base + '0');
-            carry = temp / base;
-        }
-        result[i +0] += carry;
-	}
-	// Remove leading zeros
-	result.erase(0, min(result.find_first_not_of('0'), result.size() - 1));
-	return result;
+    return 0;
 }
-
-// Method for multiply one digit number
-string multiplyOneDigit(string num1, int digit, int base)
-{
-	int carry = 0;
-	string result = "";
-
-    // For loop that multiplies each digit of number 1 by digit, starting from the least significant digit.
-	for (int i = num1.length() - 1; i >= 0; i--)
-	{
-    	int temp = (num1[i] - '0') * digit + carry;
-        result += (char)(temp % base + '0');
-        carry = temp / base;
-	}
-
-	if (carry > 0)
-	{
-        result += (char)(carry + '0');
-	}
-
-	reverse(result.begin(), result.end());
-	return result;
-}
-
-// Method for integer divide
-string divide(string num1, string num2, int base)
-{
-	// Handle num1 < num2 case
-	if (num1.length() < num2.length() || (num1.length() == num2.length() && num1 < num2))
-	{
-        return "0";
-	}
-
-	string result;
-	string remainder = "0";
-
-	for (int i = 0; i < num1.length(); i++)
-	{
-        remainder += num1[i];
-
-        int quotient = 0;
-        while (compareStrings(remainder, num2))
-        {
-            remainder = subtract(remainder, num2, base);
-            quotient++;
-        }
-
-        result += to_string(quotient);
-	}
-
-    // Handle to remove head with 0
-	while (result[0] == '0' && result.length() > 1)
-	{
-        result.erase(0, 1);
-	}
-
-	return result;
-}
-
-// Method for comparing the value of two strings
-bool compareStrings(string num1, string num2) {
-	// Remove leading zeroes
-    while (num1.length() > 1 && num1[0] == '0') 
-	{
-        num1.erase(0, 1);
-    }
-    while (num2.length() > 1 && num2[0] == '0') 
-	{
-        num2.erase(0, 1);
-    }
-
-    int len1 = num1.length();
-    int len2 = num2.length();
-
-    if (len1 != len2) {
-        return len1 > len2;
-    }
-
-    for (int i = 0; i < len1; i++) {
-        if (num1[i] != num2[i]) 
-		{
-            return num1[i] > num2[i];
-        }
-    }
-    return false;
-}
-
-
-
-
-
